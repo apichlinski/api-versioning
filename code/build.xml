@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="ApiVersioning" default="check">
+
+    <!-- ============================================  -->
+    <!-- Target: install                               -->
+    <!-- ============================================  -->
+    <target name="install" description="Install application.">
+        <echo msg="=================== composer" />
+        <exec command="composer install" dir="." passthru="true" checkreturn="true"/>
+        <echo msg="=================== cache" />
+        <exec command="bin/console cache:warmup" dir="." passthru="true" checkreturn="true"/>
+        <echo msg="=================== database" />
+        <exec command="bin/console doctrine:database:create --no-interaction --if-not-exists" dir="." passthru="true" checkreturn="true"/>
+        <exec command="bin/console doctrine:migrations:migrate --all-or-nothing --no-interaction" dir="." passthru="true" checkreturn="true"/>
+        <exec command="bin/console doctrine:fixtures:load --no-interaction" dir="." passthru="true" checkreturn="true"/>
+        <phingcall target="front"/>
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: uninstall                             -->
+    <!-- ============================================  -->
+    <target name="uninstall" description="Drops database.">
+        <echo msg="=================== drop db"/>
+        <input message="This will drop your database. Are you still want to execute this command?" propertyName="confirm" validArgs="y,n"/>
+        <if>
+            <equals arg1="${confirm}" arg2="y"/>
+            <then>
+                <exec command="bin/console doctrine:database:drop --no-interaction --force" dir="." passthru="true" checkreturn="true"/>
+            </then>
+        </if>
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: reinstall                             -->
+    <!-- ============================================  -->
+    <target name="reinstall" depends="uninstall,install" description="Reinstall application. You will end up with clean instance.">
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: update                                -->
+    <!-- ============================================  -->
+    <target name="update" description="Update application. Useful after pulling new code.">
+        <echo msg="=================== composer" />
+        <exec command="composer install" dir="." passthru="true" checkreturn="true"/>
+        <echo msg="=================== schema" />
+        <exec command="bin/console doctrine:migrations:migrate --all-or-nothing --no-interaction" dir="." passthru="true" checkreturn="true"/>
+        <phingcall target="front"/>
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: front                                 -->
+    <!-- ============================================  -->
+    <target name="front" hidden="true">
+        <echo msg="==========================================================" level="warning" />
+        <echo msg="==== Remember to build your frontend files! (webpack) ====" level="warning" />
+        <echo msg="====         docker-compose run node yarn up          ====" level="warning" />
+        <echo msg="====         docker-compose run node yarn dev         ====" level="warning" />
+        <echo msg="==========================================================" level="warning" />
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: check                                 -->
+    <!-- ============================================  -->
+    <target name="check" description="Check if code is valid. Do not change your code.">
+        <echo msg="=================== phpcs" />
+        <phingcall target="fix">
+            <property name="check" value="y" />
+        </phingcall>
+        <echo msg="=================== phpmd" />
+        <phingcall target="check.md"/>
+        <echo msg="=================== schema" />
+        <exec command="bin/console doctrine:schema:validate --skip-sync" dir="." passthru="true" checkreturn="true"/>
+        <echo msg="=================== phpunit" />
+        <exec command="bin/phpunit" dir="." passthru="true" checkreturn="true"/>
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: md                                    -->
+    <!-- ============================================  -->
+    <target name="check.md" description="Check if code is valid (only mess detector). Do not change your code.">
+        <exec command="vendor/bin/phpmd src --exclude src/Entity,src/Migrations,src/Enum --suffixes php text cleancode,codesize,controversial,design,unusedcode" dir="." passthru="true" checkreturn="true"/>
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: fix                                   -->
+    <!-- ============================================  -->
+    <target name="fix" description="This method will try to fix your code if it not meets configured standards.">
+        <echo msg="=================== phpcs" description="Fixes your code. This will change your code."/>
+        <property name="check_command" value="" />
+        <if>
+            <equals arg1="${check}" arg2="y" />
+            <then>
+                <property name="check_command" value="--dry-run" override="true"/>
+            </then>
+        </if>
+        <exec command="vendor/bin/php-cs-fixer fix src ${check_command}" dir="." passthru="true" checkreturn="true"/>
+    </target>
+
+    <!-- ============================================  -->
+    <!-- Target: test                                   -->
+    <!-- ============================================  -->
+    <target name="test" description="Functional and unit tests.">
+        <exec command="php -d memory_limit=1G bin/phpunit" dir="." passthru="true" checkreturn="true"/>
+    </target>
+
+</project>

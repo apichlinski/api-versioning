@@ -29,4 +29,4 @@ fos_rest:
         serialize_null: true
     versioning:
         enabled: true
-        default_version: v1
+        default_version: 2

@@ -6,7 +6,8 @@ use Doctrine\ORM\Mapping as ORM;
 use JMS\Serializer\Annotation as JMS;
 
 /**
- * User Entity
+ * User Entity.
+ *
  * @JMS\ExclusionPolicy("all")
  * @ORM\Entity(repositoryClass="App\Repository\UserRepository")
  */
@@ -37,6 +38,8 @@ class User
 
     /**
      * @JMS\Expose()
+     * @JMS\Until("1")
+     *
      * @JMS\Type("DateTime<'Y-m-d'>")
      *
      * @ORM\Column(type="date", nullable=true)
@@ -56,6 +59,14 @@ class User
      * @ORM\Column(type="string", length=255)
      */
     private $lastname;
+
+    /**
+     * @JMS\Expose()
+     * @JMS\Since("2")
+     *
+     * @ORM\Column(type="string", length=255)
+     */
+    private $country;
 
     public function getId(): ?int
     {
@@ -118,6 +129,18 @@ class User
     public function setLastname(string $lastname): self
     {
         $this->lastname = $lastname;
+
+        return $this;
+    }
+
+    public function getCountry(): ?string
+    {
+        return $this->country;
+    }
+
+    public function setCountry(string $country): self
+    {
+        $this->country = $country;
 
         return $this;
     }

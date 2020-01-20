@@ -18,14 +18,14 @@ class UserControllerTest extends WebTestCase
     use FixturesTrait;
 
     /**
-     * Test [GET] /api/user/{id}.
+     * Test [GET] /api/{version}/user/{id}.
      */
     public function testGetUser()
     {
         $user = $this->getOneUser();
 
         $client = static::createClient();
-        $client->request('GET', '/api/user/'.$user->getId());
+        $client->request('GET', '/api/1/user/'.$user->getId());
 
         // Response is OK
         $this->assertEquals(200, $client->getResponse()->getStatusCode());
